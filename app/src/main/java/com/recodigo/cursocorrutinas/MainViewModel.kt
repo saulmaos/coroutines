@@ -15,7 +15,7 @@ class MainViewModel : ViewModel() {
     }
 
     fun runFirst() {
-        viewModelScope.launch(Dispatchers.Default) {
+        viewModelScope.launch(Dispatchers.Unconfined) {
             val time: Duration = measureTime {
                 log("print this NOW")
                 delay(1000L)
@@ -31,10 +31,31 @@ class MainViewModel : ViewModel() {
             delay(2000L)
             log("third")
         }
-        viewModelScope.launch{
+        viewModelScope.launch {
             delay(1000L)
             log("second")
         }
         log("This goes first")
+    }
+
+    fun runThird() {
+        val job: Job = viewModelScope.launch(Dispatchers.Unconfined){
+            log("This goes first")
+            suspended()
+            log("This goes third")
+        }
+        log("I want to quit")
+        job.cancel()
+        log("This goes fourth")
+    }
+
+    private suspend fun suspended() {
+        withContext(Dispatchers.Default) {
+            repeat(1000000000) {
+                ensureActive()
+                val la = 5 * it // just a random action
+            }
+            log("This goes second")
+        }
     }
 }
