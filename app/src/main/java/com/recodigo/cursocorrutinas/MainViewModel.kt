@@ -58,4 +58,23 @@ class MainViewModel : ViewModel() {
             log("This goes second")
         }
     }
+
+    fun asyncFunction() {
+        viewModelScope.launch {
+            log("FIRST LOG")
+            val deferredNumber1: Deferred<Double> = async {
+                returnARandomNumber(1_500)
+            }
+            val deferredNumber2: Deferred<Double> = async {
+                returnARandomNumber(2_500)
+            }
+            log("first: ${deferredNumber1.await()}, second: ${deferredNumber2.await()}")
+            log("LAST LOG")
+        }
+    }
+
+    private suspend fun returnARandomNumber(delay: Long): Double {
+        delay(delay)
+        return Math.random() * 10
+    }
 }
