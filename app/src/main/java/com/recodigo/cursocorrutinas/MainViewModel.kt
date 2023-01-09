@@ -3,6 +3,7 @@ package com.recodigo.cursocorrutinas
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
+import kotlin.math.E
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
@@ -76,5 +77,150 @@ class MainViewModel : ViewModel() {
     private suspend fun returnARandomNumber(delay: Long): Double {
         delay(delay)
         return Math.random() * 10
+    }
+
+    // ERROR HANDLING ------------------------
+    // FIRST EXAMPLE
+    fun errorHandling() {
+        viewModelScope.launch {
+            try {
+                errorFunction()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // log exception to server...
+                // tell the user an error occurred
+            }
+        }
+    }
+    // SECOND EXAMPLE
+    fun errorHandling2() {
+        viewModelScope.launch {
+            try {
+                errorFunction()
+                nonErrorFunction()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // log exception to server...
+                // tell the user an error occurred
+            }
+        }
+    }
+
+    // THIRD EXAMPLE
+    fun errorHandling3() {
+        try {
+            viewModelScope.launch {
+                errorFunction()
+            }
+            viewModelScope.launch {
+                errorFunction()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // log exception to server...
+            // tell the user an error occurred
+        }
+    }
+
+    // THIRD EXAMPLE Continue
+    fun errorHandling3Continue() {
+        viewModelScope.launch {
+            try {
+                errorFunction()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // log exception to server...
+                // tell the user an error occurred
+            }
+        }
+        viewModelScope.launch {
+            try {
+                nonErrorFunction()
+            } catch (e: Exception) {
+                // I know this won't crash
+            }
+        }
+    }
+
+    // FOURTH EXAMPLE
+    private val exceptionHandler = CoroutineExceptionHandler { coroutineContext, throwable ->
+        throwable.printStackTrace()
+        // log exception to server...
+        // tell the user an error occurred
+    }
+    fun errorHandling4() {
+        viewModelScope.launch(exceptionHandler) {
+            errorFunction()
+        }
+        viewModelScope.launch(exceptionHandler) {
+            nonErrorFunction()
+        }
+    }
+
+    // FIFTH EXAMPLE
+    fun errorHandling5() {
+        viewModelScope.launch {
+            val first: Deferred<Double> = async {
+                errorFunctionForAsync()
+            }
+            val second: Deferred<Double> = async { nonErrorFunctionForAsync() }
+            try {
+                log("first: ${first.await()}, second: ${second.await()}")
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // log exception to server...
+                // tell the user an error occurred
+            }
+        }
+    }
+
+    // FIFTH EXAMPLE continue
+    fun errorHandling5Continue() {
+        viewModelScope.launch {
+            supervisorScope {
+                val first: Deferred<Double> = async { errorFunctionForAsync() }
+                val second: Deferred<Double> = async { nonErrorFunctionForAsync() }
+                try {
+                    log("first: ${first.await()}, second: ${second.await()}")
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    // log exception to server...
+                    // tell the user an error occurred
+                }
+            }
+        }
+    }
+
+    private suspend fun errorFunction() {
+        withContext(Dispatchers.IO) {
+            log("STARTED errorFunction -----")
+            delay(500)
+            throw NullPointerException("My error")
+        }
+    }
+
+    private suspend fun nonErrorFunction() {
+        withContext(Dispatchers.IO) {
+            log("STARTED nonErrorFunction")
+            delay(1_500)
+            log("FINISHED nonErrorFunction")
+        }
+    }
+
+    private suspend fun errorFunctionForAsync(): Double {
+        withContext(Dispatchers.IO) {
+            log("STARTED errorFunction -----")
+            delay(500)
+            throw NullPointerException("My error")
+        }
+    }
+
+    private suspend fun nonErrorFunctionForAsync(): Double {
+        return withContext(Dispatchers.IO) {
+            log("STARTED nonErrorFunction")
+            delay(1_500)
+            log("FINISHED nonErrorFunction")
+            return@withContext 5.5
+        }
     }
 }
