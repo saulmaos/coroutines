@@ -3,6 +3,7 @@ package com.recodigo.cursocorrutinas
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
+import kotlin.coroutines.CoroutineContext
 import kotlin.math.E
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
@@ -222,5 +223,24 @@ class MainViewModel : ViewModel() {
             log("FINISHED nonErrorFunction")
             return@withContext 5.5
         }
+    }
+
+    // FIFTH VIDEO
+    private val coroutineContext: CoroutineContext = Job() + Dispatchers.IO + CoroutineName("my name") + exceptionHandler
+    private val coroutineScope = CoroutineScope(coroutineContext)
+
+    @OptIn(ExperimentalStdlibApi::class)
+    fun fifthVideo() {
+        coroutineScope.launch(Dispatchers.Main) {
+            log("NAME: ${this.coroutineContext[CoroutineName]} - ${this.coroutineContext[CoroutineDispatcher]}")
+        }
+        coroutineScope.launch {
+            log("NAME: ${this.coroutineContext[CoroutineName]} - ${this.coroutineContext[CoroutineDispatcher]}")
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        coroutineScope.cancel()
     }
 }
